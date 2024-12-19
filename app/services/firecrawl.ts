@@ -25,6 +25,7 @@ export type CrawlResult = {
   metadata: {
     title: string;
     description: string;
+    sourceURL: string;
   };
 };
 
@@ -44,14 +45,30 @@ interface CrawlOptions extends PageOptions {
   allowBackwardLinks?: boolean;
 }
 
-async function downloadResults(data: any) {
+function getFilenameFromUrl(url: string): string {
+  try {
+    const urlObj = new URL(url);
+    const hostname = urlObj.hostname.replace(/^www\./, "");
+    const pathname = urlObj.pathname.replace(/\/$/, "");
+    const sanitizedName = `${hostname}${pathname}`.replace(
+      /[^a-zA-Z0-9]/g,
+      "-"
+    );
+    return sanitizedName || "firecrawl-result";
+  } catch {
+    return "firecrawl-result";
+  }
+}
+
+export async function downloadResults(data: any, url?: string) {
   const blob = new Blob([JSON.stringify(data, null, 2)], {
     type: "application/json",
   });
   const downloadUrl = window.URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = downloadUrl;
-  a.download = `firecrawl-result-${new Date().toISOString()}.json`;
+  const filename = url ? getFilenameFromUrl(url) : "firecrawl-result";
+  a.download = `${filename}-${new Date().toISOString()}.json`;
   document.body.appendChild(a);
   a.click();
   window.URL.revokeObjectURL(downloadUrl);
@@ -78,9 +95,7 @@ export async function scrapeUrl(
     throw new Error(error?.error || `HTTP error! status: ${response.status}`);
   }
 
-  const data = await response.json();
-  await downloadResults(data);
-  return data;
+  return await response.json();
 }
 
 export async function crawlUrl(
@@ -131,7 +146,6 @@ export async function pollJobResults(jobId: string): Promise<CrawlResult[]> {
     const data = await response.json();
 
     if (data.status === "completed" && Array.isArray(data.data)) {
-      await downloadResults(data.data);
       return data.data;
     }
 

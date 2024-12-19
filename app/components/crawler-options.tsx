@@ -15,9 +15,16 @@ interface CrawlerOptionsProps {
 export function CrawlerOptions({ onChange }: CrawlerOptionsProps) {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    onChange({
-      [name]: type === 'checkbox' ? checked : value
-    });
+
+    if (type === "number") {
+      onChange({
+        [name]: value ? parseInt(value, 10) : undefined,
+      });
+    } else {
+      onChange({
+        [name]: type === "checkbox" ? checked : value,
+      });
+    }
   };
 
   return (
@@ -25,19 +32,19 @@ export function CrawlerOptions({ onChange }: CrawlerOptionsProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm">Limit</label>
-          <Input 
-            type="number" 
+          <Input
+            type="number"
             name="limit"
-            placeholder="10" 
+            placeholder="10"
             onChange={handleInputChange}
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm">Max depth</label>
-          <Input 
-            type="number" 
+          <Input
+            type="number"
             name="maxDepth"
-            placeholder="Enter max depth" 
+            placeholder="Enter max depth"
             onChange={handleInputChange}
           />
         </div>
@@ -46,17 +53,17 @@ export function CrawlerOptions({ onChange }: CrawlerOptionsProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm">Exclude Paths</label>
-          <Input 
+          <Input
             name="exclude"
-            placeholder="blog/*, /about/*" 
+            placeholder="blog/*, /about/*"
             onChange={handleInputChange}
           />
         </div>
         <div className="space-y-2">
           <label className="text-sm">Include Only Paths</label>
-          <Input 
+          <Input
             name="includes"
-            placeholder="articles/*" 
+            placeholder="articles/*"
             onChange={handleInputChange}
           />
         </div>
@@ -64,10 +71,10 @@ export function CrawlerOptions({ onChange }: CrawlerOptionsProps) {
 
       <div className="space-y-4">
         <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="ignore-sitemap" 
+          <Checkbox
+            id="ignore-sitemap"
             name="ignoreSitemap"
-            onCheckedChange={(checked) => 
+            onCheckedChange={(checked) =>
               onChange({ ignoreSitemap: checked as boolean })
             }
           />
@@ -77,10 +84,10 @@ export function CrawlerOptions({ onChange }: CrawlerOptionsProps) {
         </div>
 
         <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="allow-backwards" 
+          <Checkbox
+            id="allow-backwards"
             name="allowBackwardLinks"
-            onCheckedChange={(checked) => 
+            onCheckedChange={(checked) =>
               onChange({ allowBackwardLinks: checked as boolean })
             }
           />

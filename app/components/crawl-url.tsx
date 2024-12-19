@@ -4,8 +4,15 @@ import { useState } from "react";
 import { UrlInput } from "./url-input";
 import { CrawlerOptions } from "./crawler-options";
 import { PageOptions } from "./page-options";
-import { crawlUrl, pollJobResults } from "../services/firecrawl";
+import {
+  crawlUrl,
+  pollJobResults,
+  downloadResults,
+} from "../services/firecrawl";
 import type { CrawlResult } from "../services/firecrawl";
+import { storeFirecrawlResults } from "../services/supabase";
+import { Button } from "@/components/ui/button";
+import { Loader2, Download } from "lucide-react";
 
 export function CrawlUrl() {
   const [isOptionsOpen, setIsOptionsOpen] = useState(true);
@@ -21,6 +28,7 @@ export function CrawlUrl() {
     onlyMainContent: true,
   });
   const [results, setResults] = useState<CrawlResult[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (url: string) => {
     setIsLoading(true);
@@ -61,6 +69,28 @@ export function CrawlUrl() {
     }));
   };
 
+  const handleSaveToDatabase = async () => {
+    if (!results.length) return;
+
+    setIsSaving(true);
+    try {
+      await storeFirecrawlResults(results);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Fehler beim Speichern in der Datenbank"
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDownload = () => {
+    if (!results.length) return;
+    downloadResults(results, results[0]?.metadata?.sourceURL);
+  };
+
   return (
     <div className="space-y-4 py-4">
       <UrlInput onSubmit={handleSubmit} isLoading={isLoading} />
@@ -87,9 +117,35 @@ export function CrawlUrl() {
         )}
       </div>
 
-      {results.length > 0 && (
+      {results.length > 0 && !isLoading && (
         <div className="mt-8">
-          <h2 className="text-xl font-semibold mb-4">Results</h2>
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-semibold">Results</h2>
+            <div className="flex gap-2">
+              <Button
+                onClick={handleDownload}
+                variant="outline"
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Download JSON
+              </Button>
+              <Button
+                onClick={handleSaveToDatabase}
+                disabled={isSaving}
+                className="bg-green-500 hover:bg-green-600"
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save to Database"
+                )}
+              </Button>
+            </div>
+          </div>
           <div className="space-y-4">
             {results.map((result, index) => (
               <div key={index} className="bg-gray-100 p-4 rounded">
